@@ -180,3 +180,4 @@ data/transactions_excel.xlsx
 .csv
 .log
 .pyc
+.idea
