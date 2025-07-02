@@ -20,3 +20,22 @@ isort = "^6.0.1"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line_length = 119
+exclude = '''
+/(
+    \.git
+   | venv
+)/
+'''
+
+[tool.isort]
+line_length = 119
+profile = "black"
+skip_glob = ["venv/*"]
+
+[tool.mypy]
+disallow_untyped_defs = true
+warn_return_any = true
+exclude = "venv"
