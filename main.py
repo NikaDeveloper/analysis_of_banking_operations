@@ -1,6 +1,11 @@
+import logging
 from src.utils import read_excel_data
 
-excel_file_path = "../data/operations.xlsx"
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+
+excel_file_path = "data/operations.xlsx"
 
 
 operations_df = read_excel_data(excel_file_path)
