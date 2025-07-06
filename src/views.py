@@ -39,6 +39,7 @@ def process_transactions_for_main_page(date_str: str, file_path: str = "operatio
 
         input_date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
         start_of_month = input_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        all_transactions['Дата операции'] = pd.to_datetime(all_transactions['Дата операции'], dayfirst=True)
 
         # Фильтрация транзакций за текущий месяц до входной даты
         filtered_transactions = all_transactions[
@@ -91,7 +92,7 @@ def process_transactions_for_main_page(date_str: str, file_path: str = "operatio
             top_5_transactions.append(
                 {
                     "date": row["Дата операции"].strftime("%d.%m.%Y"),
-                    "amount": round(float(row["Сумма платежа"].abs()), 2),  # Берем абсолютное значение
+                    "amount": round(abs(float(row["Сумма платежа"])), 2),  # Берем абсолютное значение
                     "category": row["Категория"],
                     "description": row["Описание"],
                 }
