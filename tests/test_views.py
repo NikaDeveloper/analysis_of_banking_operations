@@ -89,8 +89,14 @@ def test_process_transactions_for_main_page_success(
 
 
 @patch("src.views.load_transactions_from_excel")
+@patch("src.views.load_user_settings")
+@patch("src.views.get_currency_rates")
+@patch("src.views.get_stock_prices")
 def test_process_transactions_for_main_page_no_transactions(
-    mock_load_transactions_from_excel: MagicMock,
+    mock_get_stock_prices: MagicMock,
+    mock_get_currency_rates: MagicMock,
+    mock_load_user_settings: MagicMock,
+    mock_load_transactions_from_excel: MagicMock
 ):
     """
     Тест сценария, когда нет транзакций или они не соответствуют фильтрам.
@@ -115,7 +121,17 @@ def test_process_transactions_for_main_page_no_transactions(
         ]
     )
 
-    date_str = "2024-07-05 10:00:00"
+    # Возвращаем пустые настройки пользователя
+    mock_load_user_settings.return_value = {
+        "user_currencies": [],
+        "user_stocks": []
+    }
+
+    # Настраиваем моки для функций, которые используют эти настройки
+    mock_get_currency_rates.return_value = []
+    mock_get_stock_prices.return_value = []
+
+    date_str = "2021-07-05 10:00:00"
     json_response = process_transactions_for_main_page(date_str)
     response_data = json.loads(json_response)
 
@@ -124,6 +140,10 @@ def test_process_transactions_for_main_page_no_transactions(
     assert response_data["top_transactions"] == []
     assert response_data["currency_rates"] == []
     assert response_data["stock_prices"] == []
+
+    mock_load_user_settings.assert_called_once()
+    mock_get_currency_rates.asser_called_once_with([])
+    mock_get_stock_prices.assert_called_once_with([])
 
 
 @patch("src.views.load_transactions_from_excel", side_effect=FileNotFoundError("Test file not found"))
