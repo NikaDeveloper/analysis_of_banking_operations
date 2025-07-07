@@ -29,6 +29,9 @@ def simple_search(transactions: pd.DataFrame, query: str) -> List[Dict[str, Any]
     if transactions.empty:
         logger.info("DataFrame с транзакциями пуст.")
         return []
+    if not query:
+        logger.info("Запрос пустой")
+        return []
 
     # Преобразование запроса для регистронезависимого поиска
     query_lower = query.lower()
@@ -45,7 +48,7 @@ def simple_search(transactions: pd.DataFrame, query: str) -> List[Dict[str, Any]
             if isinstance(value, pd.Timestamp):
                 row[key] = value.strftime("%d.%m.%Y %H:%M:%S")  # Используем тот же формат, что и в файле
             elif pd.isna(value):  # Обработка NaN (Not a Number) для JSON
-                row[key] = None  # JSON не имеет NaN, обычно преобразуется в null
+                row[key] = ""  # JSON не имеет NaN, обычно преобразуется в null
 
     logger.info(f"Поиск завершен. Найдено {len(results)} транзакций по запросу '{query}'.")
     return results

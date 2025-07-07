@@ -1,266 +1,179 @@
-import json
-from datetime import datetime
-from unittest.mock import MagicMock, patch
-
-import pandas as pd
 import pytest
+from unittest.mock import patch, mock_open
+import pandas as pd
+from datetime import datetime
+import json
 
-from src.views import process_transactions_for_main_page
+import requests
 
-
-@pytest.fixture
-def mock_transactions_df():
-    """
-    Фикстура для DataFrame с тестовыми транзакциями, имитирующими operations.xls.
-    В 'Сумма платежа' используем отрицательные значения для расходов.
-    """
-    data = {
-        "Дата операции": [
-            "01.07.2024 10:00:00",
-            "02.07.2024 11:00:00",
-            "03.07.2024 12:00:00",
-            "04.07.2024 13:00:00",
-            "05.07.2024 14:00:00",
-            "05.07.2024 15:00:00",
-            "05.07.2024 16:00:00",
-            "05.07.2024 17:00:00",
-            "05.07.2024 18:00:00",
-            "06.07.2024 09:00:00",  # Новая транзакция для проверки граничных условий
-        ],
-        "Дата платежа": [
-            "01.07.2024",
-            "02.07.2024",
-            "03.07.2024",
-            "04.07.2024",
-            "05.07.2024",
-            "05.07.2024",
-            "05.07.2024",
-            "05.07.2024",
-            "05.07.2024",
-            "06.07.2024",
-        ],
-        "Номер карты": [
-            "*1111",
-            "*2222",
-            "*1111",
-            "*3333",
-            "*1111",
-            "*2222",
-            "*1111",
-            "*3333",
-            "*1111",
-            "*1111",
-        ],
-        "Статус": ["OK", "OK", "OK", "OK", "OK", "OK", "FAILED", "OK", "OK", "OK"],
-        "Сумма операции": [
-            -100.00,
-            -200.00,
-            -150.00,
-            -50.00,
-            -300.00,
-            -1000.00,
-            -500.00,
-            -400.00,
-            -700.00,
-            5000.00,  # Положительная сумма, как зачисление
-        ],
-        "Валюта операции": ["RUB", "RUB", "RUB", "RUB", "RUB", "RUB", "RUB", "RUB", "RUB", "RUB"],
-        "Сумма платежа": [
-            -100.00,
-            -200.00,
-            -150.00,
-            -50.00,
-            -300.00,
-            -1000.00,
-            -500.00,  # Эта сумма должна быть проигнорирована т.к. FAILED статус
-            -400.00,
-            -700.00,
-            5000.00,  # Зачисление, не расход
-        ],
-        "Валюта платежа": ["RUB", "RUB", "RUB", "RUB", "RUB", "RUB", "RUB", "RUB", "RUB", "RUB"],
-        "Кешбэк": ["1,00", "2,00", "1,50", "0,50", "3,00", "10,00", "5,00", "4,00", "7,00", "0,00"],
-        "Категория": [
-            "Еда",
-            "Транспорт",
-            "Развлечения",
-            "Продукты",
-            "Кафе",
-            "Путешествия",
-            "Здоровье",
-            "Образование",
-            "Магазины",
-            "Зарплата",
-        ],
-        "MCC": ["5812", "4111", "7832", "5411", "5814", "4722", "8099", "8299", "5311", "1234"],
-        "Описание": [
-            "Обед в кафе",
-            "Поездка на автобусе",
-            "Билет в кино",
-            "Покупка в магазине",
-            "Кофе в Старбакс",
-            "Авиабилеты",
-            "Поход к врачу (FAILED)",
-            "Курсы программирования",
-            "Покупки одежды",
-            "Зарплата",
-        ],
-        "Бонусы (включая кэшбэк)": ["1,00", "2,00", "1,50", "0,50", "3,00", "10,00", "5,00", "4,00", "7,00", "0,00"],
-        "Округление на инвесткопилку": [
-            "0,00",
-            "0,00",
-            "0,00",
-            "0,00",
-            "0,00",
-            "0,00",
-            "0,00",
-            "0,00",
-            "0,00",
-            "0,00",
-        ],
-        "Сумма операции с округлением": [
-            -100.00,
-            -200.00,
-            -150.00,
-            -50.00,
-            -300.00,
-            -1000.00,
-            -500.00,
-            -400.00,
-            -700.00,
-            5000.00,
-        ],
-    }
-    df = pd.DataFrame(data)
-    return df
+from src.utils import (
+    load_transactions_from_excel,
+    get_greeting,
+    get_currency_rates,
+    get_stock_prices,
+    load_user_settings,
+)
 
 
-@patch("src.utils.load_transactions_from_excel")
-@patch("src.utils.load_user_settings")
-@patch("src.utils.get_currency_rates")
-@patch("src.utils.get_stock_prices")
-def test_process_transactions_for_main_page_success(
-    mock_get_stock_prices: MagicMock,
-    mock_get_currency_rates: MagicMock,
-    mock_load_user_settings: MagicMock,
-    mock_load_transactions_from_excel: MagicMock,
-    mock_transactions_df: pd.DataFrame,
-):
-    """
-    Тест успешной генерации JSON-ответа для главной страницы.
-    """
-    mock_load_transactions_from_excel.return_value = mock_transactions_df
-    mock_load_user_settings.return_value = {
-        "user_currencies": ["USD", "EUR"],
-        "user_stocks": ["AAPL", "GOOGL"],
-    }
-    mock_get_currency_rates.return_value = [
-        {"currency": "USD", "rate": 90.0},
-        {"currency": "EUR", "rate": 100.0},
-    ]
-    mock_get_stock_prices.return_value = [
-        {"stock": "AAPL", "price": 150.0},
-        {"stock": "GOOGL", "price": 2500.0},
-    ]
-
-    date_str = "2024-07-05 15:30:00"  # Дата, до которой включаем транзакции
-    json_response = process_transactions_for_main_page(date_str)
-    response_data = json.loads(json_response)
-
-    assert response_data["greeting"] == "Добрый день"
-    assert len(response_data["cards"]) == 3  # *1111, *2222, *3333
-    assert response_data["currency_rates"] == [
-        {"currency": "USD", "rate": 90.0},
-        {"currency": "EUR", "rate": 100.0},
-    ]
-    assert response_data["stock_prices"] == [
-        {"stock": "AAPL", "price": 150.0},
-        {"stock": "GOOGL", "price": 2500.0},
-    ]
-
-    # Проверка данных по картам (транзакции до 2024-07-05 15:30:00, статус OK, расходы)
-    # *1111: -100, -150, -300, -700. Сумма = 1250.0. Кешбэк: 1.0, 1.5, 3.0, 7.0. Сумма = 12.5
-    # *2222: -200, -1000. Сумма = 1200.0. Кешбэк: 2.0, 10.0. Сумма = 12.0
-    # *3333: -50, -400. Сумма = 450.0. Кешбэк: 0.5, 4.0. Сумма = 4.5
-
-    card_1111_data = next(item for item in response_data["cards"] if item["last_digits"] == "1111")
-    assert card_1111_data["total_spent"] == 1250.00
-    assert card_1111_data["cashback"] == 12.50
-
-    card_2222_data = next(item for item in response_data["cards"] if item["last_digits"] == "2222")
-    assert card_2222_data["total_spent"] == 1200.00
-    assert card_2222_data["cashback"] == 12.00
-
-    card_3333_data = next(item for item in response_data["cards"] if item["last_digits"] == "3333")
-    assert card_3333_data["total_spent"] == 450.00
-    assert card_3333_data["cashback"] == 4.50
-
-    # Проверка топ-5 транзакций (только успешные, отрицательные суммы, по модулю)
-    # Все транзакции до 2024-07-05 15:30:00, статус OK, отрицательные суммы:
-    # Путешествия: -1000
-    # Магазины: -700
-    # Кафе: -300
-    # Транспорт: -200
-    # Развлечения: -150
-    # Продукты: -100
-    # Продукты: -50
-    # Образование: -400 (статус OK)
-
-    top_transactions = response_data["top_transactions"]
-    assert len(top_transactions) == 5
-    assert top_transactions[0]["amount"] == 1000.00
-    assert top_transactions[1]["amount"] == 700.00
-    assert top_transactions[2]["amount"] == 400.00
-    assert top_transactions[3]["amount"] == 300.00
-    assert top_transactions[4]["amount"] == 200.00
-
-
-@patch("src.utils.load_transactions_from_excel")
-def test_process_transactions_for_main_page_no_transactions(
-    mock_load_transactions_from_excel: MagicMock,
-):
-    """
-    Тест сценария, когда нет транзакций или они не соответствуют фильтрам.
-    """
-    mock_load_transactions_from_excel.return_value = pd.DataFrame(
-        columns=[
-            "Дата операции",
-            "Дата платежа",
-            "Номер карты",
-            "Статус",
-            "Сумма операции",
-            "Валюта операции",
-            "Сумма платежа",
-            "Валюта платежа",
-            "Кешбэк",
-            "Категория",
-            "MCC",
-            "Описание",
-            "Бонусы (включая кэшбэк)",
-            "Округление на инвесткопилку",
-            "Сумма операции с округлением",
-        ]
+# Тесты для load_transactions_from_excel
+@patch("pandas.read_excel")
+def test_load_transactions_from_excel_success(mock_read_excel):
+    """Тест успешной загрузки транзакций из Excel"""
+    # Подготовка мок данных
+    mock_data = pd.DataFrame(
+        {
+            "Дата операции": ["01.01.2023", "02.01.2023"],
+            "Дата платежа": ["01.01.2023", "02.01.2023"],
+            "Сумма операции": ["100,50", "200,75"],
+            "Кешбэк": ["1,5", "2,75"],
+        }
     )
+    mock_read_excel.return_value = mock_data
 
-    date_str = "2024-07-05 10:00:00"
-    json_response = process_transactions_for_main_page(date_str)
-    response_data = json.loads(json_response)
+    # Вызов функции
+    result = load_transactions_from_excel("test.xlsx")
 
-    assert response_data["greeting"] == "Доброе утро"
-    assert response_data["cards"] == []
-    assert response_data["top_transactions"] == []
-    assert response_data["currency_rates"] == []
-    assert response_data["stock_prices"] == []
+    # Проверки
+    assert isinstance(result, pd.DataFrame)
+    assert len(result) == 2
+    assert "Дата операции" in result.columns
+    assert result["Сумма операции"].dtype == float
+    assert result["Кешбэк"].dtype == float
 
 
-@patch("src.utils.load_transactions_from_excel", side_effect=FileNotFoundError("Test file not found"))
-def test_process_transactions_for_main_page_file_error(
-    mock_load_transactions_from_excel: MagicMock,
-):
-    """
-    Тест обработки ошибки при загрузке файла Excel.
-    """
-    date_str = "2024-07-05 10:00:00"
-    json_response = process_transactions_for_main_page(date_str)
-    response_data = json.loads(json_response)
-    assert "error" in response_data
-    assert "Test file not found" in response_data["error"]
+@patch("pandas.read_excel")
+def test_load_transactions_from_excel_file_not_found(mock_read_excel):
+    """Тест обработки ошибки отсутствия файла"""
+    mock_read_excel.side_effect = FileNotFoundError("File not found")
+
+    with pytest.raises(FileNotFoundError):
+        load_transactions_from_excel("nonexistent.xlsx")
+
+
+# Тесты для get_greeting
+def test_get_greeting_morning():
+    """Тест приветствия для утра"""
+    assert get_greeting("2023-01-01 08:00:00") == "Доброе утро"
+
+
+def test_get_greeting_day():
+    """Тест приветствия для дня"""
+    assert get_greeting("2023-01-01 14:00:00") == "Добрый день"
+
+
+def test_get_greeting_evening():
+    """Тест приветствия для вечера"""
+    assert get_greeting("2023-01-01 20:00:00") == "Добрый вечер"
+
+
+def test_get_greeting_night():
+    """Тест приветствия для ночи"""
+    assert get_greeting("2023-01-01 02:00:00") == "Доброй ночи"
+
+
+def test_get_greeting_invalid_format():
+    """Тест обработки неверного формата времени"""
+    with pytest.raises(ValueError):
+        get_greeting("invalid-time-format")
+
+
+# Тесты для get_currency_rates
+@patch("requests.get")
+@patch.dict("os.environ", {"EXCHANGE_RATE_API_KEY": "test_api_key"})
+def test_get_currency_rates_success(mock_get):
+    """Тест успешного получения курсов валют"""
+    # Подготовка мок ответа
+    mock_response = mock_get.return_value
+    mock_response.raise_for_status.return_value = None
+    mock_response.json.return_value = {
+        "rates": {"USD": 0.014, "EUR": 0.012},
+        "base": "RUB",
+    }
+
+    # Вызов функции
+    result = get_currency_rates(["USD", "EUR"])
+
+    # Проверки
+    assert len(result) == 2
+    assert result[0]["currency"] == "USD"
+    assert isinstance(result[0]["rate"], float)
+    assert result[1]["currency"] == "EUR"
+    assert isinstance(result[1]["rate"], float)
+
+
+@patch("requests.get")
+@patch.dict("os.environ", {"EXCHANGE_RATE_API_KEY": "test_api_key"})
+def test_get_currency_rates_api_error(mock_get):
+    """Тест обработки ошибки API"""
+    mock_get.side_effect = requests.exceptions.RequestException("API error")
+
+    result = get_currency_rates(["USD", "EUR"])
+    assert result == []
+
+
+@patch.dict("os.environ", {}, clear=True)
+def test_get_currency_rates_no_api_key():
+    """Тест отсутствия API ключа"""
+    result = get_currency_rates(["USD", "EUR"])
+    assert result == []
+
+
+# Тесты для get_stock_prices
+@patch("requests.get")
+@patch.dict("os.environ", {"FINNHUB_API_KEY": "test_api_key"})
+def test_get_stock_prices_success(mock_get):
+    """Тест успешного получения цен акций"""
+    # Подготовка мок ответов
+    mock_response1 = mock_get.return_value
+    mock_response1.raise_for_status.return_value = None
+    mock_response1.json.return_value = {"c": 150.25}
+
+    # Вызов функции
+    result = get_stock_prices(["AAPL"])
+
+    # Проверки
+    assert len(result) == 1
+    assert result[0]["stock"] == "AAPL"
+    assert result[0]["price"] == 150.25
+
+
+@patch("requests.get")
+@patch.dict("os.environ", {"FINNHUB_API_KEY": "test_api_key"})
+def test_get_stock_prices_api_error(mock_get):
+    """Тест обработки ошибки API для акций"""
+    mock_get.side_effect = requests.exceptions.RequestException("API error")
+
+    result = get_stock_prices(["AAPL"])
+    assert result == []
+
+
+@patch.dict("os.environ", {}, clear=True)
+def test_get_stock_prices_no_api_key():
+    """Тест отсутствия API ключа для акций"""
+    result = get_stock_prices(["AAPL"])
+    assert result == []
+
+
+# Тесты для load_user_settings
+def test_load_user_settings_success():
+    """Тест успешной загрузки пользовательских настроек"""
+    test_settings = {"theme": "dark", "currency": "USD"}
+
+    with patch("builtins.open", mock_open(read_data=json.dumps(test_settings))) as mock_file:
+        result = load_user_settings()
+
+    assert result == test_settings
+
+
+def test_load_user_settings_file_not_found():
+    """Тест обработки отсутствия файла настроек"""
+    with patch("builtins.open", side_effect=FileNotFoundError()):
+        result = load_user_settings()
+        assert result == {}
+
+
+def test_load_user_settings_invalid_json():
+    """Тест обработки невалидного JSON"""
+    with patch("builtins.open", mock_open(read_data="invalid json")):
+        result = load_user_settings()
+        assert result == {}
