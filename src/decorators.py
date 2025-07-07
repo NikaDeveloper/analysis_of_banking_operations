@@ -26,12 +26,23 @@ def log_report_to_file(file_name: str = "") -> Callable[[Callable[..., Any]], Ca
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             result = func(*args, **kwargs)
 
+            is_empty = False
+            if isinstance(result, pd.DataFrame):
+                is_empty = result.empty
+            elif isinstance(result, (list, tuple, set)):
+                is_empty = len(result) == 0
+            elif not result:
+                is_empty = True
+
+            if is_empty:
+                return result
+
             output_dir = "reports"
             os.makedirs(output_dir, exist_ok=True)  # Создаем папку, если ее нет
 
             if not file_name:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                default_file_name = f"report_{func.__name__}_{timestamp}.json"
+                default_file_name = f"reports_{func.__name__}_{timestamp}.json"
                 actual_file_name = os.path.join(output_dir, default_file_name)
             else:
                 actual_file_name = os.path.join(output_dir, file_name)
