@@ -1,7 +1,6 @@
-import json
 import os
 from datetime import datetime
-from unittest.mock import MagicMock, patch, mock_open
+from unittest.mock import MagicMock, mock_open, patch
 
 import pandas as pd
 import pytest
@@ -24,15 +23,15 @@ from src.reports import spending_by_category
 @patch("builtins.open", new_callable=mock_open)
 @patch("json.dump")
 def test_spending_by_category_with_date(
-        mock_json_dump,
-        mock_file_open,
-        mock_makedirs,
-        sample_transactions_df,
-        category,
-        date_str,
-        expected_rows_count,
-        expected_total_sum,
-        expect_dump,
+    mock_json_dump,
+    mock_file_open,
+    mock_makedirs,
+    sample_transactions_df,
+    category,
+    date_str,
+    expected_rows_count,
+    expected_total_sum,
+    expect_dump,
 ):
     """
     Тест функции spending_by_category с указанной датой.
@@ -92,10 +91,10 @@ def test_spending_by_category_without_date(
 @patch("builtins.open", new_callable=mock_open)
 @patch("src.decorators.json.dump")
 def test_spending_by_category_no_matching_transactions(
-        mock_json_dump: MagicMock,
-        mock_file_open: MagicMock,
-        mock_makedirs: MagicMock,
-        sample_transactions_df: pd.DataFrame
+    mock_json_dump: MagicMock,
+    mock_file_open: MagicMock,
+    mock_makedirs: MagicMock,
+    sample_transactions_df: pd.DataFrame,
 ):
     """
     Тест spending_by_category, когда нет транзакций, соответствующих критериям.
@@ -117,10 +116,10 @@ def test_spending_by_category_no_matching_transactions(
 @patch("builtins.open", new_callable=mock_open)  # Добавляем мок для open
 @patch("src.decorators.json.dump")
 def test_log_report_to_file_with_custom_name(
-        mock_json_dump: MagicMock,
-        mock_file_open: MagicMock,  # Добавляем параметр для мока open
-        mock_makedirs: MagicMock,
-        tmp_path: pytest.TempPathFactory
+    mock_json_dump: MagicMock,
+    mock_file_open: MagicMock,  # Добавляем параметр для мока open
+    mock_makedirs: MagicMock,
+    tmp_path: pytest.TempPathFactory,
 ):
     """Тест декоратора log_report_to_file с кастомным именем файла."""
     from src.decorators import log_report_to_file
@@ -144,7 +143,7 @@ def test_log_report_to_file_with_custom_name(
         {"data": "test"},
         mock_file_open.return_value.__enter__.return_value,  # Файловый объект
         ensure_ascii=False,
-        indent=2
+        indent=2,
     )
 
 
@@ -157,7 +156,7 @@ def test_log_report_to_file_default_name(
     mock_json_dump: MagicMock,
     mock_file_open: MagicMock,
     mock_makedirs: MagicMock,
-    tmp_path: pytest.TempPathFactory
+    tmp_path: pytest.TempPathFactory,
 ):
     """Тест декоратора log_report_to_file с именем файла по умолчанию."""
     from src.decorators import log_report_to_file
@@ -182,7 +181,7 @@ def test_log_report_to_file_default_name(
         {"value": 123},
         mock_file_open.return_value.__enter__.return_value,  # Файловый объект
         ensure_ascii=False,
-        indent=2
+        indent=2,
     )
 
     # Проверяем имя файла

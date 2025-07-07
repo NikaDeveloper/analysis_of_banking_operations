@@ -58,9 +58,9 @@ def log_report_to_file(file_name: str = "") -> Callable[[Callable[..., Any]], Ca
                         processed_item = {}
                         for key, value in item.items():
                             if isinstance(value, pd.Timestamp):
-                                processed_item[key] = value.strftime("%d.%m.%Y %H:%M:%S")
+                                processed_item[str(key)] = value.strftime("%d.%m.%Y %H:%M:%S")
                             elif pd.isna(value):  # Обработка NaN в None
-                                processed_item[key] = None
+                                processed_item[str(key)] = ""
                             else:
                                 processed_item[key] = value
                         processed_data.append(processed_item)

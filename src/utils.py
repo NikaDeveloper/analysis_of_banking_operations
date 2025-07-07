@@ -172,24 +172,15 @@ def get_stock_prices(stocks: List[str]) -> List[Dict[str, Union[str, float]]]:
 def load_user_settings(file_path: str = "src/user_settings.json") -> Dict[str, Any]:
     """
     Загружает пользовательские настройки из JSON-файла.
-
-    Args:
-        file_path: Путь к файлу user_settings.json.
-
-    Returns:
-        Словарь с пользовательскими настройками.
     """
     try:
         with open(file_path, "r", encoding="utf-8") as f:
-            settings = json.load(f)
+            settings: Dict[str, Any] = json.load(f)
         logger.info(f"Пользовательские настройки загружены из {file_path}")
         return settings
-    except FileNotFoundError:
-        logger.error(f"Файл пользовательских настроек не найден: {file_path}")
-        return {}
-    except json.JSONDecodeError as e:
-        logger.error(f"Ошибка декодирования JSON в файле настроек: {file_path}. Ошибка: {e}")
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        logger.error(f"Ошибка загрузки настроек: {e}")
         return {}
     except Exception as e:
-        logger.error(f"Неизвестная ошибка при загрузке пользовательских настроек: {e}")
+        logger.error(f"Неизвестная ошибка: {e}")
         return {}

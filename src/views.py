@@ -1,7 +1,7 @@
 import json
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Union
+from typing import Dict, List, Union
 
 import pandas as pd
 
@@ -39,7 +39,7 @@ def process_transactions_for_main_page(date_str: str, file_path: str = "operatio
 
         input_date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
         start_of_month = input_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        all_transactions['Дата операции'] = pd.to_datetime(all_transactions['Дата операции'], dayfirst=True)
+        all_transactions["Дата операции"] = pd.to_datetime(all_transactions["Дата операции"], dayfirst=True)
 
         # Фильтрация транзакций за текущий месяц до входной даты
         filtered_transactions = all_transactions[

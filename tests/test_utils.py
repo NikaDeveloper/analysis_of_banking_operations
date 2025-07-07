@@ -1,16 +1,15 @@
-import pytest
-from unittest.mock import patch, mock_open
-import pandas as pd
-from datetime import datetime
 import json
+from unittest.mock import mock_open, patch
 
+import pandas as pd
+import pytest
 import requests
 
 from src.utils import (
-    load_transactions_from_excel,
-    get_greeting,
     get_currency_rates,
+    get_greeting,
     get_stock_prices,
+    load_transactions_from_excel,
     load_user_settings,
 )
 
@@ -159,7 +158,7 @@ def test_load_user_settings_success():
     """Тест успешной загрузки пользовательских настроек"""
     test_settings = {"theme": "dark", "currency": "USD"}
 
-    with patch("builtins.open", mock_open(read_data=json.dumps(test_settings))) as mock_file:
+    with patch("builtins.open", mock_open(read_data=json.dumps(test_settings))):
         result = load_user_settings()
 
     assert result == test_settings

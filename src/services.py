@@ -1,6 +1,5 @@
 import logging
-import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Hashable
 
 import pandas as pd
 
@@ -13,7 +12,7 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 
-def simple_search(transactions: pd.DataFrame, query: str) -> List[Dict[str, Any]]:
+def simple_search(transactions: pd.DataFrame, query: str) -> List[Dict[Hashable, Any]]:
     """
     Выполняет поиск по описанию транзакций.
 

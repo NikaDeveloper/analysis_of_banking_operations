@@ -74,7 +74,8 @@ def main() -> None:
         category_for_report = "Супермаркеты"
         # Передаем дату последней транзакции для отчета
         logger.info(
-            f"\n--- Генерируем отчет 'Траты по категории' для '{category_for_report}' на дату: {report_date_str_for_report} ---"
+            f"\n--- Генерируем отчет 'Траты по категории' для '{category_for_report}'"
+            f" на дату: {report_date_str_for_report} ---"
         )
 
         spending_report_df = spending_by_category(transactions_df, category_for_report, report_date_str_for_report)
@@ -90,7 +91,8 @@ def main() -> None:
                         row[key] = None
 
             print(
-                f"Отчет по тратам в категории '{category_for_report}' за последние 3 месяца (JSON):\n{json.dumps(report_data_for_json, ensure_ascii=False, indent=2)}"
+                f"Отчет по тратам в категории '{category_for_report}' "
+                f"за последние 3 месяца (JSON):\n{json.dumps(report_data_for_json, ensure_ascii=False, indent=2)}"
             )
         else:
             print(f"Отчет по тратам в категории '{category_for_report}' за последние 3 месяца: Нет данных.")

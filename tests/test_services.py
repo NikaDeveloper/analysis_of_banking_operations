@@ -1,10 +1,7 @@
-import json
-
 import pandas as pd
 import pytest
 
 from src.services import simple_search
-
 
 # @pytest.fixture
 # def sample_transactions():

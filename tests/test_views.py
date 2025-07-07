@@ -1,9 +1,7 @@
 import json
-from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
-import pytest
 
 from src.views import process_transactions_for_main_page
 
@@ -96,7 +94,7 @@ def test_process_transactions_for_main_page_no_transactions(
     mock_get_stock_prices: MagicMock,
     mock_get_currency_rates: MagicMock,
     mock_load_user_settings: MagicMock,
-    mock_load_transactions_from_excel: MagicMock
+    mock_load_transactions_from_excel: MagicMock,
 ):
     """
     Тест сценария, когда нет транзакций или они не соответствуют фильтрам.
@@ -122,10 +120,7 @@ def test_process_transactions_for_main_page_no_transactions(
     )
 
     # Возвращаем пустые настройки пользователя
-    mock_load_user_settings.return_value = {
-        "user_currencies": [],
-        "user_stocks": []
-    }
+    mock_load_user_settings.return_value = {"user_currencies": [], "user_stocks": []}
 
     # Настраиваем моки для функций, которые используют эти настройки
     mock_get_currency_rates.return_value = []
